@@ -1,0 +1,32 @@
+{
+  "x": 0,
+  "wins": {
+    "ide": { "app": true, "cmd": "D:\\ProgsReady\\IntellijIdeaUI\\bin\\idea64.exe" },
+    "watch_cjs": {
+      "cmd": "cls && npm run precompile && npm run watch:cjs",
+      "no_run": false
+    },
+    "watch_types": {
+      "cmd": "cls && npm run precompile && npm run watch:types",
+      "no_run": false
+    },
+    "dev_server": {
+      "cmd": "cls && npm run dev_server",
+      "no_run": false
+    },
+    "precompile": {
+      "cmd": "cls && npm run precompile",
+      "no_run": true
+    }
+  },
+  "disabled": {
+    "watch_test_cjs": {
+      "cmd": "cls && npm run watch:test:cjs",
+      "no_run": true
+    },
+    "node": {
+      "cmd": "cls && npm run precompile && node",
+      "no_run": true
+    }
+  }
+}
