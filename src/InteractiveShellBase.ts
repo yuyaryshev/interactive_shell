@@ -1,47 +1,83 @@
 import { getOutputSize, Output } from "./Output.js";
 import { Subscriber } from "./Subscriber.js";
+import { defaultMaxBuffer } from "./constants";
 
 export interface InteractiveShellBaseOpts {
     maxBuffer: number;
+    allOutputsOverride?: OutputsCont;
+    subscribersOverride?: Subscriber[];
 }
+
 export const defaultInteractiveShellBaseOpts = {
-    maxBuffer: 1 * 1024 * 1024,
+    maxBuffer: defaultMaxBuffer,
 };
 
-export abstract class InteractiveShellBase {
-    private allOutputsSize: number = 0;
-    private allOutputs: Output[] = [];
+export interface GenericInteractiveShell {
+    exec(command: string): Promise<Output[]>;
+    close(): Promise<void> | void;
+    setConsoleLogging(v: boolean): void;
+    getAllOutput(): Output[];
+    getAllOutputStr(): string;
+    subscribe(subscriber: Subscriber): void;
+    unsubscribe(subscriber: Subscriber): void;
+    wait(): Promise<void> | undefined;
+    lastOutput(): Output;
+}
+
+export interface OutputsCont {
+    size: number;
+    outputs: Output[];
+}
+export function newOutputsCont() {
+    return { size: 0, outputs: [] };
+}
+
+export abstract class InteractiveShellBase implements GenericInteractiveShell {
+    protected allOutputs: OutputsCont;
+    protected subscribers: Subscriber[];
     private lastCallIndex: number = 0;
-    private subscribers: Subscriber[] = [];
     private v_isReady: boolean = true;
     private readyPromiseResolve: undefined | (() => void);
     private v_wait: undefined | Promise<void>;
+    private v_consoleLogSubscriber: ((o: Output) => void) | undefined;
 
-    constructor(public readonly opts: InteractiveShellBaseOpts) {}
+    constructor(public readonly opts: InteractiveShellBaseOpts) {
+        this.allOutputs = opts.allOutputsOverride || newOutputsCont();
+        this.subscribers = opts.subscribersOverride || [];
+    }
 
     async exec(command: string): Promise<Output[]> {
-        this.lastCallIndex = this.allOutputs.length;
+        this.lastCallIndex = this.allOutputs.outputs.length;
         await this._internal_exec(command);
         await this.wait();
-        return this.allOutputs.slice(this.lastCallIndex);
+        return this.allOutputs.outputs.slice(this.lastCallIndex);
     }
 
     async close() {
         await this._internal_close();
     }
 
-    consoleLogging(){
-        this.subscribe((o: Output) => {
-            console.log(o.s);
-        });
+    setConsoleLogging(v: boolean) {
+        if (!!this.v_consoleLogSubscriber !== v) {
+            if (this.v_consoleLogSubscriber) {
+                this.unsubscribe(this.v_consoleLogSubscriber);
+                this.v_consoleLogSubscriber = undefined;
+            } else {
+                this.subscribe(
+                    (this.v_consoleLogSubscriber = (o: Output) => {
+                        console.log(o.s);
+                    }),
+                );
+            }
+        }
     }
 
     getAllOutput(): Output[] {
-        return this.allOutputs;
+        return this.allOutputs.outputs;
     }
 
     getAllOutputStr(): string {
-        return this.allOutputs.map((o) => o.s || "").join("");
+        return this.allOutputs.outputs.map((o) => o.s || "").join("");
     }
 
     subscribe(subscriber: Subscriber): void {
@@ -61,7 +97,7 @@ export abstract class InteractiveShellBase {
     }
 
     lastOutput(): Output {
-        return this.allOutputs[this.allOutputs.length - 1] || ({} as any);
+        return this.allOutputs.outputs[this.allOutputs.outputs.length - 1] || ({} as any);
     }
     //******************************************************************
     // Internal functions, acestors should implement them.
@@ -100,12 +136,12 @@ export abstract class InteractiveShellBase {
         for (let i = 0; i < this.subscribers.length; i++) {
             this.subscribers[i](output);
         }
-        this.allOutputs.push(output);
+        this.allOutputs.outputs.push(output);
 
-        this.allOutputsSize += getOutputSize(output);
+        this.allOutputs.size += getOutputSize(output);
 
-        while (this.allOutputsSize > this.opts.maxBuffer && this.allOutputs.length > 1) {
-            this.allOutputsSize -= getOutputSize(this.allOutputs.splice(0, 1)[0]);
+        while (this.allOutputs.size > this.opts.maxBuffer && this.allOutputs.outputs.length > 1) {
+            this.allOutputs.size -= getOutputSize(this.allOutputs.outputs.splice(0, 1)[0]);
             if (this.lastCallIndex > 0) {
                 this.lastCallIndex--;
             }

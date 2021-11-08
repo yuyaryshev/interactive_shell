@@ -1,7 +1,7 @@
 import { defaultInteractiveShellBaseOpts, InteractiveShellBase, InteractiveShellBaseOpts } from "../InteractiveShellBase.js";
 import { Output } from "../Output.js";
 import { ChildProcessWithoutNullStreams, spawn } from "child_process";
-import { awaitDelay } from "../awaitDelay";
+import { awaitDelay } from "../awaitDelay.js";
 
 export interface InteractiveShellCmdOpts extends InteractiveShellBaseOpts {}
 

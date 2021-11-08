@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { dirname } from "path";
-import { InteractiveShellCmd } from "./InteractiveShellCmd.js";
 import {Output} from "../Output.js";
+import {InteractiveShellCmd} from "../cmd/InteractiveShellCmd";
 
 const icwd = dirname(process.cwd());
 function prepareStr(s: string) {

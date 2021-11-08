@@ -6,7 +6,7 @@
     <working-directory>$PROJECT_DIR$</working-directory>
     <pass-parent-env>true</pass-parent-env>
     <envs>
-      <env name="DEBUG" value="* -mocha* -sql* -api.auth*" />
+      <env name="DEBUG2" value="* -mocha* -sql* -api.auth*" />
     </envs>
     <ui>bdd</ui>
     <extra-mocha-options />
